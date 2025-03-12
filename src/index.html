@@ -5,8 +5,146 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive College Story Game</title>
     <link href="./output.css" rel="stylesheet">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .glow:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+        }
+
+        .shake {
+            animation: shake 0.3s ease-in-out;
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+
+        .score-transition {
+            transition: transform 0.5s ease-in-out, background-color 0.5s ease-in-out;
+        }
+    </style>
 </head>
-<body>
-    hello
+<body class="bg-black text-white flex flex-col items-center justify-center min-h-screen p-4">
+    <header class="text-center fade-in">
+        <h1 class="text-3xl font-bold text-yellow-400">Interactive College Story Game</h1>
+        <p class="mt-2 text-gray-300">Make decisions and see whether you think with your heart or brain!</p>
+    </header>
+
+    <div id="instructions" class="mt-6 text-center bg-gray-900 p-6 shadow-lg rounded-lg fade-in">
+        <p class="text-gray-400">Answer the questions wisely. Each choice affects your final decision-making style.</p>
+        <button id="startGame" class="mt-4 px-6 py-2 bg-yellow-500 text-black font-bold rounded-lg glow transition">Start Playing</button>
+    </div>
+
+    <div id="gameContainer" class="hidden mt-6 w-full max-w-md bg-gray-900 p-6 shadow-lg rounded-lg fade-in">
+        <h2 id="questionText" class="text-xl font-semibold text-yellow-400"></h2>
+        <div id="choicesContainer" class="mt-4 flex flex-col gap-2 text-center"></div>
+    </div>
+
+    <div id="scoreScale" class="hidden mt-6 w-full max-w-md p-4 bg-gray-900 shadow-lg rounded-lg fade-in">
+        <p class="text-center font-semibold text-yellow-400">Your Thinking Style</p>
+        <div class="relative w-full h-6 bg-gray-700 rounded-lg mt-2">
+            <div id="scoreIndicator" class="absolute top-0 left-1/2 h-6 w-6 bg-yellow-400 rounded-full score-transition"></div>
+        </div>
+        <div class="flex justify-between text-sm text-gray-400 mt-1">
+            <span class="text-red-500">Heart (-50)</span>
+            <span class="text-green-500">Brain (+50)</span>
+        </div>
+    </div>
+
+    <script>
+        let currentScore = 0;
+        let currentIndex = 0;
+
+        const questions = {
+            0: { question: "You have an exam tomorrow. Do you study or hang out with friends?", choices: [{ text: "Study", score: 10 }, { text: "Hang out", score: -10 }] },
+            1: { question: "A friend needs help with their project. Do you help or focus on your work?", choices: [{ text: "Help them", score: -5 }, { text: "Focus on my work", score: 5 }] },
+            2: { question: "You found a wallet on the ground. Do you return it or keep it?", choices: [{ text: "Return it", score: 10 }, { text: "Keep it", score: -10 }] }
+        };
+        const questionOrder = [0, 1, 2];
+
+        document.getElementById("startGame").addEventListener("click", startGame);
+
+        function startGame() {
+            currentScore = 0;
+            currentIndex = 0;
+            document.getElementById("instructions").classList.add("hidden");
+            document.getElementById("gameContainer").classList.remove("hidden");
+            document.getElementById("scoreScale").classList.remove("hidden");
+            document.getElementById("scoreIndicator").style.transform = "translateX(0%)";
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            if (currentIndex >= questionOrder.length) {
+                return endGame();
+            }
+
+            let questionId = questionOrder[currentIndex];
+            let questionData = questions[questionId];
+
+            document.getElementById("questionText").textContent = questionData.question;
+            let choicesContainer = document.getElementById("choicesContainer");
+            choicesContainer.innerHTML = "";
+
+            questionData.choices.forEach(choice => {
+                let btn = document.createElement("button");
+                btn.textContent = choice.text;
+                btn.className = "px-4 py-2 bg-yellow-500 text-black font-bold rounded-lg glow transition w-full";
+                btn.addEventListener("click", () => {
+                    btn.classList.add("shake");
+                    setTimeout(() => btn.classList.remove("shake"), 300);
+                    handleChoice(choice.score);
+                });
+                choicesContainer.appendChild(btn);
+            });
+        }
+
+        function handleChoice(score) {
+            currentScore += score;
+            updateScoreScale();
+            currentIndex++;
+            loadQuestion();
+        }
+
+        function updateScoreScale() {
+            let percentage = ((currentScore + 50) / 100) * 100 - 50;
+            document.getElementById("scoreIndicator").style.transform = `translateX(${percentage}%)`;
+            document.getElementById("scoreIndicator").style.backgroundColor = currentScore < 0 ? "#FF0000" : "#00FF00";
+        }
+
+        function endGame() {
+            document.getElementById("gameContainer").classList.add("hidden");
+            document.getElementById("scoreScale").classList.add("hidden");
+
+            document.getElementById("instructions").classList.remove("hidden");
+            document.getElementById("instructions").innerHTML = `
+                <h2 class="text-xl font-semibold text-yellow-400">Game Over!</h2>
+                <p class="text-lg text-gray-300 mt-2">Final Score: ${currentScore}</p>
+                <button id="restartGame" class="mt-4 px-6 py-2 bg-yellow-500 text-black rounded-lg glow transition">Restart</button>
+            `;
+
+            document.getElementById("restartGame").addEventListener("click", restartGame);
+        }
+
+        function restartGame() {
+            document.getElementById("instructions").classList.add("hidden");
+            document.getElementById("gameContainer").classList.remove("hidden");
+            document.getElementById("scoreScale").classList.remove("hidden");
+            startGame();
+        }
+    </script>
 </body>
 </html>
